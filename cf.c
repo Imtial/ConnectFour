@@ -39,7 +39,7 @@ void init_game()
 
 void draw_board(const char board[ROW][COL])
 {
-    // system("clear");
+    //system("clear");
 
     for(int i=0; i<ROW; i++)
     {
@@ -62,12 +62,13 @@ int evaluate_board(const char board[ROW][COL], int col, int last_score)
     int i;
 
     // column checking for symbol in a row
-    for(i=1; board[top+i][col]==sym && i<4;i++)
+    for(i=1; board[top+i][col]==sym && i<4 && (top+i)<ROW;i++)
     {
         in_a_row++;
     }
-    if(in_a_row == 4)
+    if(in_a_row >= 4)
     {
+        //printf("col check\n");
         if(sym == 'O') return -INF;
         else return +INF;
     }
@@ -78,7 +79,7 @@ int evaluate_board(const char board[ROW][COL], int col, int last_score)
         in_a_row = 1;
     }
     // column checking for opposite symbol in a row
-    for(i=1; board[top+i][col]==opsym && i<4;i++)
+    for(i=1; board[top+i][col]==opsym && i<4 && (top+i)<ROW;i++)
     {
         opcount++;
     }
@@ -98,8 +99,9 @@ int evaluate_board(const char board[ROW][COL], int col, int last_score)
     {
         in_a_row++;
     }
-    if(in_a_row == 4)
+    if(in_a_row >= 4)
     {
+        //printf("row check\n");
         if(sym=='O') return -INF;
         else return +INF;
     }
@@ -135,8 +137,9 @@ int evaluate_board(const char board[ROW][COL], int col, int last_score)
     {
         in_a_row++;
     }
-    if(in_a_row == 4)
+    if(in_a_row >= 4)
     {
+        //printf("bottom left check\n");
         if(sym=='O') return -INF;
         else return +INF;
     }
@@ -172,8 +175,9 @@ int evaluate_board(const char board[ROW][COL], int col, int last_score)
     {
         in_a_row++;
     }
-    if(in_a_row == 4)
+    if(in_a_row >= 4)
     {
+        //printf("bottom right check\n");
         if(sym=='O') return -INF;
         else return +INF;
     }
@@ -208,6 +212,7 @@ int evaluate_board(const char board[ROW][COL], int col, int last_score)
 
 int player_move(char col, char sym)
 {
+    //printf("player move : %d\n",col);
     int col_val = col - 'A' + 1;
     if(position[col_val] == 0) return ERR_MOVE;
 
@@ -233,7 +238,7 @@ int minimax(char board[ROW][COL], char sym, int col, int depth, int board_score)
     if(score == -INF) return -INF;
 
     // Draw game
-    if(score == 0)  return 0;
+    //if(score == 0)  return 0;
 
     // if this is maximizer's move
     if(sym=='X')
@@ -247,11 +252,12 @@ int minimax(char board[ROW][COL], char sym, int col, int depth, int board_score)
                 int row = position[c]--;
                 board[row][c] = sym;
 
-                int debug_score = evaluate_board(board, c, score);
+                //int debug_score = evaluate_board(board, c, score);
                 // draw_board(board);
                 // printf("Depth: %d, Sym: %c, Pre-Score: %d, Post-Score: %d\n", depth, sym, score, debug_score);
 
                 int val = minimax(board, 'O', c, depth-1, score);
+                //printf("Depth: %d, Sym: %c, val: %d\n",depth, sym, val);
                 if(val > best) best = val;
 
                 board[row][c] = '.';
@@ -273,11 +279,11 @@ int minimax(char board[ROW][COL], char sym, int col, int depth, int board_score)
                 int row = position[c]--;
                 board[row][c] = sym;
 
-                int debug_score = evaluate_board(board, c, score);
+                //int debug_score = evaluate_board(board, c, score);
                 // draw_board(board);
-                // printf("Depth: %d, Sym: %c, Pre-Score: %d, Post-Score: %d\n", depth, sym, score, debug_score);
 
                 int val = minimax(board, 'X', c, depth-1, score);
+                //printf("Depth: %d, Sym: %c, val: %d\n", depth, sym, val);
 
                 if(val < best) best = val;
 
@@ -307,7 +313,7 @@ char ai_move(char board[ROW][COL], int depth)
 
             int move_score = minimax(board, opsym, c, depth-1, game_score);
             // draw_board(board);
-            // printf("Prev: %d, Post: %d\n", game_score, move_score);
+            //printf("Prev: %d, Post: %d\n",game_score, move_score);
 
             board[row][c] = '.';
             position[c]++;
@@ -319,7 +325,32 @@ char ai_move(char board[ROW][COL], int depth)
             }
         }
     }
-    // printf("Best : %d\n", best);
+    //printf("best %d\n",best);
+    if(best == -INF){
+        //printf("dhukse\n");
+        for(int c=1; c<COL; c++)
+        {
+            if(position[c]>0)
+            {
+                int row = position[c]--;
+                board[row][c] = opsym;
+
+                int move_score = evaluate_board(board, c, game_score);
+                // draw_board(board);
+                //printf("Prev: %d, Post: %d\n",game_score, move_score);
+
+                board[row][c] = '.';
+                position[c]++;
+
+                if(move_score == -INF)
+                {
+                    col = c;
+                }
+            }
+        }
+    }
+    //for(int i=1; i<COL; i++) printf("%d  => %d\n",i,position[i]);
+    //printf("best : %d\n", best);
     return col+'A'-1;
 }
 
@@ -327,36 +358,49 @@ int main()
 {
     init_game();
     draw_board(board);
-
+    int strt;
     int moves = 0;
+    printf("Options: (for starting move)\n");
+    printf("1)player\n");
+    printf("2)computer\n");
+    scanf("%d",&strt);
+
     while(moves++ < (ROW-1)*(COL-1))
     {
         char p;
         int move;
-        do
-        {
-            printf("player 1 move: ");
-            scanf(" %c", &p);
-            move = player_move(p, 'O');
-            // move = player_move(ai_move(board, 'X', 5)+'A'-1, 'X');
-        } while(move == ERR_MOVE);
-
-        draw_board(board);
-
-        if(move == -INF)
-        {
-            printf("Game Over!!!\nWINNER: Player 1!\n");
-            break;
+        if(strt <= 1){
+            do
+            {
+                printf("player 1 move: ");
+                scanf(" %c", &p);
+                move = player_move(p, 'O');
+              // move = player_move(ai_move(board, 'X', 5)+'A'-1, 'X');
+            } while(move == ERR_MOVE);
+            //printf("game_score: %d\n",game_score);
+            draw_board(board);
+            if(move == -INF)
+            {
+                printf("Game Over!!!\nWINNER: Player 1!\n");
+                break;
+            }
         }
-
+        
         do
         {
+            if(strt == 2){
+                strt--;
+            }
             // printf("player 2 move: ");
             // scanf(" %c", &p);
             // move = player_move(p, 'O');
             move = player_move(ai_move(board, 2), 'X');
+            //printf("ai move %d\n",move);
+            //printf("computer vabtese\n");
         } while (move == ERR_MOVE);
 
+        //for(int i=1; i<COL; i++) printf("%d  => %d\n",i,position[i]);
+        //printf("game_score: %d\n",game_score);
         printf("Computer move done\n");
         draw_board(board);
 
@@ -365,6 +409,9 @@ int main()
             printf("Game Over!!!\nWINNER: Player 2!\n");
             break;
         }
+    }
+    if(moves >= (ROW-1)*(COL-1)){
+        printf("Game Drawn!!!\n");
     }
     return 0;
 }
